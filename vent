@@ -1,0 +1,66 @@
+blueprint:
+  name: Вентилация на определени часове с проверка за отворени прозорци
+  description: Пуска вентилацията в определени часове за определено време, като проверява дали прозорците са затворени.
+
+  domain: automation
+  input:
+    vent_entity:
+      name: Вентилационно устройство
+      description: Вентилационното устройство, което ще бъде контролирано.
+      selector:
+        entity:
+          domain: fan
+
+    window_sensors:
+      name: Прозоречни сензори
+      description: Списък с бинарни сензори, които ще се използват за проверка на прозорците.
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: window
+      multiple: true
+
+    start_times:
+      name: Начални часове
+      description: Часовете, в които вентилацията да започне да работи.
+      default: []
+      selector:
+        time:
+    
+    duration:
+      name: Продължителност
+      description: Продължителност на времето, през което вентилацията ще бъде активна (в минути).
+      default: 60
+      selector:
+        number:
+          min: 1
+          max: 720
+          unit_of_measurement: мин
+
+mode: restart
+
+trigger:
+  - platform: time
+    hours: !input start_times
+
+condition:
+  - condition: template
+    value_template: >
+      {% set window_states = [] %}
+      {% for sensor in window_sensors %}
+        {% if is_state(sensor, 'open') %}
+          {% set window_states = window_states + [sensor] %}
+        {% endif %}
+      {% endfor %}
+      {{ window_states | length == 0 }}
+
+action:
+  - service: fan.turn_on
+    target:
+      entity_id: !input vent_entity
+
+  - delay: "{{ duration | multiply(60) }}"
+  
+  - service: fan.turn_off
+    target:
+      entity_id: !input vent_entity
