@@ -1,66 +1,695 @@
 blueprint:
-  name: Вентилация на определени часове с проверка за отворени прозорци
-  description: Пуска вентилацията в определени часове за определено време, като проверява дали прозорците са затворени.
+  name: Turn Light, Switch, Entity or Scene On & Off with Trigger Conditions
+  description: >
+    # ⚙️ Turn Light, Switch, Entity or Scene On & Off with Trigger Conditions
+    
+    **Version: 2.0**
+    
+    
+    Trigger-Ready Control - Customize On & Off for Light, Switch, Scene, or Any Entity 🚦
 
+
+    **If you like my blueprints, and would like to show your support or just say thank you?** [Click Here](https://www.paypal.com/donate/?hosted_button_id=WAZS3QSDTPGA8) 🙂
+
+    
+    <details>
+    <summary><b>The Automation Process:</b> - Click here to expand</summary>
+
+    
+      - **Trigger Options:**
+        - **Entity State Option:**
+          - When an entity changes its state from OFF to ON, the automation will turn specified entities ON.
+          - When an entity changes its state from ON to OFF, the automation will turn specified entities OFF.
+
+        - **Sun Option:**
+          - When the sun's elevation falls below a set value, the automation will turn specified entities ON.
+          - When the sun's elevation rises above a set value, the automation will turn specified entities OFF. 
+
+        - **Ambient Light Sensing Option:**
+          - When the ambient Light Sensor falls below a set LUX value, the automation will turn specified entities ON.
+          - When the ambient Light Sensor rises above a set LUX value, the automation will turn specified entities OFF. 
+
+        - **Time-Based Option:**
+          - Specify precise start and end times to define when the automation should turn specified entities ON and OFF.
+
+      - **Light Control Options:**
+          - Utilize "Light Control" to adjust brightness, colour temperature, and transition times.
+
+      - **Scene Integration:**
+        - Scenes offer additional customization for your spaces.
+
+      - **Manual Override:**
+        - Use "Bypass Options" for manually bypassing the trigger options. This provides manual control and additional customization.
+
+      - **Weekdays Global Condition Option:**
+        - Specify the weekday selections to define when the automation can run.
+
+      - **Custom Conditions:**
+          - Enter any custom conditions to further customize the automation process.
+    </details>
+
+
+    Need help? See our FAQ: [Click Here](https://community.home-assistant.io/t/turn-light-switch-or-scene-on-off-with-trigger-conditions/527354/2?u=blacky)
+
+    Let us know what you think of this blueprint and for community support including updates: [Click Here](https://community.home-assistant.io/t/turn-light-switch-or-scene-on-off-with-trigger-conditions/527354?u=blacky)
+
+    
+    Required = *
   domain: automation
   input:
-    vent_entity:
-      name: Вентилационно устройство
-      description: Вентилационното устройство, което ще бъде контролирано.
-      selector:
-        entity:
-          domain: fan
+    entity_switch:
+      name: Lights - Switches - Entities - Scenes *
+      description: The lights that get turned ON and OFF with a binary sensor, the sun's elevation, an ambient light value or time.
+        You can also add switches and scenes. If adding a scene please read "Scenes To Turn OFF" below.
 
-    windows:
-      name: Прозорци
-      description: Списък с прозорци, които трябва да бъдат затворени.
-      selector:
-        entity:
-          domain: binary_sensor
-          device_class: window
-      multiple: true
 
-    start_times:
-      name: Начални часове
-      description: Часовете, в които вентилацията да започне да работи.
+        **NOTE** - You can only use entities. Areas, devices and labels are not supported.
+      selector:
+        target:
+    end_scenes:
+      name: Scenes To Turn OFF
+      description: If you have selected a scene to be turned ON above in "Lights - Switches - Entities - Scenes" and you would like it to be turned OFF,
+        then you must create another identical scene with everything OFF and select it here.
       default: []
       selector:
-        time:
-    
-    duration:
-      name: Продължителност
-      description: Продължителност на времето, през което вентилацията ще бъде активна (в минути).
-      default: 60
+        entity:
+          multiple: true
+          filter:
+            domain:
+              - scene
+    include_light_control:
+      name: Light Control
+      description: Select the options you would like to use. It will only control a "light" entity that has a brightness setting.
+      default: dont_use_brightness
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Use brightness
+              value: "use_brightness"
+            - label: Use colour temperature
+              value: "use_colour_temperature"
+            - label: Use transition
+              value: "use_transition"
+    light_brightness:
+      name: Brightness
+      description: Brightness of the lights when they are turned ON.
+      default: 100
       selector:
         number:
           min: 1
-          max: 720
-          unit_of_measurement: мин
+          max: 100
+          mode: slider
+          step: 1
+          unit_of_measurement: '%'
+    light_colour_temperature:
+      name: Colour Temperature
+      description: The colour temperature setting for the lights when they are turned ON.
+      default: 5000
+      selector:
+        number:
+          min: 2000
+          max: 8000
+          mode: slider
+          step: 100
+          unit_of_measurement: 'kelvin'
+    light_transition_on:
+      name: Transition - ON
+      description: The transition setting for the lights when they are turned ON.
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 5
+          mode: slider
+          step: 0.5
+          unit_of_measurement: seconds
+    light_transition_off:
+      name: Transition - OFF
+      description: The transition setting for the lights when they are turned OFF.
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 30
+          mode: slider
+          step: 1
+          unit_of_measurement: seconds
+    include_bypass:
+      name: Use The Bypass Option (Optional)
+      description: This will bypass the automation preventing it from running.
+      default: bypass_disabled
+      selector:
+        select:
+          options:
+            - label: Enable the Bypass option
+              value: "bypass_enabled"
+            - label: Disable the Bypass option
+              value: "bypass_disabled"
+    motion_bypass:
+      name: By-pass
+      description: Select the switch that will bypass the trigger options. 
+        The entity cannot be included in the "Lights - Switches - Entities - Scenes" selection.
+      default: []
+      selector:
+        entity:
+    include_entity_input:
+      name: Use The Entity State Option (Optional)
+      description: This is used for adding a trigger when an entity changes it's state from ON to OFF or from OFF to ON. It will not work correctly with a motion sensor.
+        
+        
+        If you would like to use a motion sensor then please consider this blueprint [Click Here](https://community.home-assistant.io/t/481048)
+      default: entity_disabled
+      selector:
+        select:
+          options:
+            - label: Enable the entity state option entity_disabled
+              value: "entity_enabled"
+            - label: Disable the entity state option 
+              value: "entity_disabled"
+    entity_input:
+      name: Input Entity 
+      description: Select the entity you would like to use. The entity must have an ON / OFF state.
+      default: []
+      selector:
+        entity:
+    include_sun:
+      name: Use The Sun Option (Optional)
+      description: This is used for adding a trigger to work when the Sun elevation crosses over its elevation value.
+
+
+        For more information on sun settings [Click Here](https://community.home-assistant.io/t/527354/83?u=blacky)
+      default: sun_disabled
+      selector:
+        select:
+          options:
+            - label: Enable the sun option
+              value: "sun_enabled"
+            - label: Disable the sun option
+              value: "sun_disabled"
+    sun_elevation:
+      name: Sun Elevation Falling
+      description: The sun elevation falling refers to the angle between the sun and the horizon when the sun is setting.
+        A negative value indicates that the sun is BELOW the horizon. For example, a setting guide of -1.5 corresponds to dusk
+      default: -1.5
+      selector:
+        number:
+          min: -10
+          max: 5
+          step: 0.5
+          unit_of_measurement: degrees
+    sun_elevation_rising:
+      name: Sun Elevation Rising
+      description: The sun elevation rising refers to the angle between the sun and the horizon during sunrise.
+        A negative value indicates that the sun is BELOW the horizon. For example, a setting guide of -4.0 corresponds to dawn.
+      default: -4.0
+      selector:
+        number:
+          min: -10
+          max: 5
+          step: 0.5
+          unit_of_measurement: degrees
+    include_ambient:
+      name: Use The Ambient Option (Optional)
+      description: This is used for adding a trigger to work when the Ambient Light LUX Value crosses over its LUX value. 
+      default: ambient_disabled
+      selector:
+        select:
+          options:
+            - label: Enable the ambient option
+              value: "ambient_enabled"
+            - label: Disable the ambient option
+              value: "ambient_disabled"
+    ambient_light_sensor:
+      name: Ambient Light Sensor
+      description: Select the ambient light sensor.
+      default: []
+      selector:
+        entity:
+          filter:
+            domain: sensor
+            device_class: illuminance
+    ambient_light_value:
+      name: Ambient Light LUX Value - ON Trigger
+      description: Set the Ambient Light LUX Value. This value must be equal or lower than "LUX OFF Trigger" value below.
+        Guide is 20 lux (dusk).
+      default: 20
+      selector:
+        number:
+          min: 0
+          max: 500
+          step: 10
+          unit_of_measurement: LUX
+    ambient_light_value_off:
+      name: Ambient Light LUX Value - OFF Trigger
+      description: Set the Ambient Light LUX Value.  This value must be equal or higher than "LUX ON Trigger" value above.
+        Guide is 80 lux (dawn).
+      default: 80
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 10
+          unit_of_measurement: LUX
+    include_time:
+      name: Use The Time Options (Optional)
+      description: This is used for adding a trigger to work when the time crosses over its set value.
+      default: time_disabled
+      selector:
+        select:
+          options:
+            - label: Enable the time options
+              value: "time_enabled"
+            - label: Disable the time options
+              value: "time_disabled"
+    after_time:
+      name: On Time 
+      description: Set the on time.
+      default: 00:00:00
+      selector:
+        time:
+    before_time:
+      name: Off Time 
+      description: Set the off time.
+      default: 00:00:00
+      selector:
+        time:
+    include_weekdays:
+      name: Use The Weekdays Option (Optional)
+      description: This is used for adding a condition to only work on set weekdays. This is a global option for all trigger conditions.
+      default: weekday_disabled
+      selector:
+        select:
+          options:
+            - label: Enable the weekday option
+              value: "weekday_enabled"
+            - label: Disable the weekday option
+              value: "weekday_disabled"
+    weekday_options:
+      name: Weekdays
+      description: Select the days of the week you would like the automation to run.
+      default:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+        - sat
+        - sun
+      selector:
+        select:
+          multiple: true
+          mode: list
+          options:
+            - label: Monday
+              value: "mon"
+            - label: Tuesday
+              value: "tue"
+            - label: Wednesday
+              value: "wed"
+            - label: Thursday
+              value: "thu"
+            - label: Friday
+              value: "fri"
+            - label: Saturday
+              value: "sat"
+            - label: Sunday
+              value: "sun"
+    global_conditions:
+      name: Global Conditions
+      description: Enter any global conditions you would like to apply to the automation.
+      default: []
+      selector:
+        condition:
 
 mode: restart
+max_exceeded: silent
+
+variables:
+  entity_switch: !input entity_switch
+  end_scenes: !input end_scenes
+  include_light_control: !input include_light_control
+  light_brightness: !input light_brightness
+  brightness_value: "{{ iif ('use_brightness' in include_light_control , light_brightness, ) }}"
+  light_colour_temperature: !input light_colour_temperature
+  temperature_value: "{{ iif ('use_colour_temperature' in include_light_control , light_colour_temperature, [] ) }}"
+  light_transition_on: !input light_transition_on
+  light_transition_off: !input light_transition_off
+  transition_on_value: "{{ iif ('use_transition' in include_light_control, light_transition_on, ) }}"
+  transition_off_value: "{{ iif ('use_transition' in include_light_control, light_transition_off, ) }}"
+  include_bypass: !input include_bypass
+  motion_bypass: !input motion_bypass
+  include_entity_input: !input include_entity_input
+  entity_input: !input entity_input
+  include_sun: !input include_sun
+  sun_elevation: !input sun_elevation
+  sun_elevation_rising: !input sun_elevation_rising
+  include_ambient: !input include_ambient
+  ambient_light_sensor: !input ambient_light_sensor
+  ambient_light_value: !input ambient_light_value
+  ambient_light_value_off: !input ambient_light_value_off
+  include_time: !input include_time
+  after_time: !input after_time
+  before_time: !input before_time
+  include_weekdays: !input include_weekdays
+  weekday_options: !input weekday_options
+  global_conditions: !input global_conditions
+
+# Split domains for light switch targets and check the entities are OFF - exclude scenes and scripts as they have no off state
+
+  light_entities_off: "{{ expand(entity_switch.entity_id) | selectattr('domain', 'eq', 'light') | selectattr('state', 'eq', 'off') | map(attribute='entity_id') | list }}"
+  switch_entities_off: "{{ expand(entity_switch.entity_id) | selectattr('domain', 'eq', 'switch') | selectattr('state', 'eq', 'off') | map(attribute='entity_id') | list }}"
+
+# Split domains for light switch targets
+
+  light_entities: "{{ expand(entity_switch.entity_id) | selectattr('domain', 'eq', 'light') | map(attribute='entity_id') | list }}"
+  switch_entities: "{{ expand(entity_switch.entity_id) | selectattr('domain', 'eq', 'switch') | map(attribute='entity_id') | list }}"
+  scene_entities: "{{ expand(entity_switch.entity_id) | selectattr('domain', 'eq', 'scene') | map(attribute='entity_id') | list }}"
+  other_entities: >-
+    {{ expand(entity_switch.entity_id) 
+    | selectattr('domain', 'ne', 'light')
+    | selectattr('domain', 'ne', 'switch')
+    | selectattr('domain', 'ne', 'scene')
+    | map(attribute='entity_id')
+    | list 
+    }}
+
+# Split domains for end scenes
+
+  end_scene_entities: "{{ end_scenes | select('match', '^scene\\..*') | list }}"
 
 trigger:
+  - platform: state
+    id: "t1"
+    entity_id: !input entity_input
+    from: "off"
+    to: "on"
+  - platform: state
+    id: "t2"
+    entity_id: !input entity_input
+    from: "on"
+    to: "off"
+  - platform: numeric_state
+    id: "t3"
+    entity_id: sun.sun
+    attribute: elevation
+    below: !input sun_elevation
+  - platform: numeric_state
+    id: "t4"
+    entity_id: sun.sun
+    attribute: elevation
+    above: !input sun_elevation_rising
+  - platform: numeric_state
+    id: "t5"
+    entity_id: !input ambient_light_sensor
+    below: !input ambient_light_value
+  - platform: numeric_state
+    id: "t6"
+    entity_id: !input ambient_light_sensor
+    above: !input ambient_light_value_off
   - platform: time
-    hours: !input start_times
+    id: "t7"
+    at: !input after_time
+  - platform: time
+    id: "t8"
+    at: !input before_time
 
+# All Conditions
 condition:
-  - condition: template
-    value_template: >
-      {% set open_windows = [] %}
-      {% for window in windows %}
-        {% if is_state(window, 'on') %}
-          {% set open_windows = open_windows + [window] %}
-        {% endif %}
-      {% endfor %}
-      {{ open_windows | length == 0 }}
+#Trigger conditions
+  - condition: or
+    conditions:
+      - condition: and # trigger by entity input & check trigger t1
+        conditions:
+          -  "{{ include_entity_input == 'entity_enabled' }}"
+          - condition: trigger
+            id: 
+              - 't1'
+          - condition: state
+            entity_id: !input entity_input
+            match: any
+            state: 'on'
+      - condition: and # trigger by entity input & check trigger t2
+        conditions:
+          -  "{{ include_entity_input == 'entity_enabled' }}"
+          - condition: trigger
+            id: 
+              - 't2'
+          - condition: state
+            entity_id: !input entity_input
+            match: any
+            state: 'off'
+      - condition: and # trigger by sun & check trigger t3 & t4
+        conditions:
+          -  "{{ include_sun == 'sun_enabled' }}"
+          - condition: trigger
+            id:
+              - 't3'
+              - 't4'
+      - condition: and # trigger by ambient & check trigger t5 & t6
+        conditions:
+          -  "{{ include_ambient == 'ambient_enabled' }}"
+          - condition: trigger
+            id:
+              - 't5'
+              - 't6'
+      - condition: and # trigger by time & check trigger t7 & t8
+        conditions:
+          -  "{{ include_time == 'time_enabled' }}"
+          - condition: trigger
+            id: 
+              - 't7'
+              - 't8'
+
+# Check Motion Sensor Manual By-pass
+  - condition: or
+    conditions:
+      - "{{ include_bypass == 'bypass_disabled' }}"
+      - "{{ motion_bypass == [] }}"
+      - "{{ (include_bypass == 'bypass_enabled') and (states[motion_bypass].state == 'off') }}"
+
+# Check Entity Input
+  - condition: or
+    conditions:
+      - "{{ include_entity_input == 'entity_disabled' }}"
+      - "{{ entity_input == [] }}"
+      - "{{ (include_entity_input == 'entity_enabled') and (states[entity_input].state == 'on') }}"
+      - "{{ (include_entity_input == 'entity_enabled') and (states[entity_input].state == 'off') }}"
+
+# Check Sun Elevation
+  - condition: or
+    conditions:
+      - "{{ include_sun == 'sun_disabled' }}"
+      - "{{ (include_sun == 'sun_enabled') and (is_state_attr('sun.sun', 'rising', false)) and (state_attr('sun.sun','elevation') <= sun_elevation | float(90)) }}"
+      - "{{ (include_sun == 'sun_enabled') and (is_state_attr('sun.sun', 'rising', true)) and (state_attr('sun.sun','elevation') <= sun_elevation_rising | float(90)) }}"
+      - condition: trigger
+        id: 't4'
+
+# Check Ambient Light Sensor
+  - condition: or
+    conditions:
+      - "{{ include_ambient == 'ambient_disabled' }}"
+      - "{{ ambient_light_sensor == [] }}"
+      - "{{ (include_ambient == 'ambient_enabled') and (states[ambient_light_sensor].state | int < ambient_light_value | int) }}"
+      - "{{ (include_ambient == 'ambient_enabled') and (states[ambient_light_sensor].state | int > ambient_light_value | int) }}"
+
+# Check The Time Options
+  - condition: or
+    conditions:
+      - "{{ include_time == 'time_disabled' }}"
+      - "{{ include_time == 'time_enabled' }}"
+
+# Check The Weekday Option
+  - condition: or
+    conditions:
+      - "{{ include_weekdays == 'weekday_disabled' }}"
+      - condition: and
+        conditions:      
+        - condition: time
+          weekday: !input weekday_options
+        -  "{{ include_weekdays == 'weekday_enabled' }}"
+
+# Global Conditions
+  - condition: and
+    conditions: !input global_conditions
 
 action:
-  - service: fan.turn_on
-    target:
-      entity_id: !input vent_entity
-
-  - delay: "{{ duration | multiply(60) }}"
-  
-  - service: fan.turn_off
-    target:
-      entity_id: !input vent_entity
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - 't1'
+              - 't3'
+              - 't5'
+              - 't7'
+        sequence:
+          - choose:
+            - alias: "Set the transition for the lights"
+              conditions:
+                - condition: template
+                  value_template: "{{ ('use_transition' in include_light_control) and ('use_brightness' not in include_light_control) and ('use_colour_temperature' not in include_light_control) }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ light_entities_off }}"
+                  data:
+                    transition: "{{ transition_on_value }}"
+            - alias: "Set the transition and brightness for the lights"
+              conditions:
+                - condition: template
+                  value_template: "{{ ('use_transition' in include_light_control) and ('use_brightness' in include_light_control) and ('use_colour_temperature' not in include_light_control) }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ light_entities_off }}"
+                  data:
+                    transition: "{{ transition_on_value }}"
+                    brightness_pct: "{{ brightness_value }}"
+            - alias: "Set the transition and colour temperature for the lights"
+              conditions:
+                - condition: template
+                  value_template: "{{ ('use_transition' in include_light_control) and ('use_brightness' not in include_light_control) and ('use_colour_temperature' in include_light_control) }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ light_entities_off }}"
+                  data:
+                    transition: "{{ transition_on_value }}"
+                    kelvin: "{{temperature_value}}"
+            - alias: "Set the transition, brightness and colour temperature for the lights"
+              conditions:
+                - condition: template
+                  value_template: "{{ ('use_transition' in include_light_control) and ('use_brightness' in include_light_control) and ('use_colour_temperature' in include_light_control) }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ light_entities_off }}"
+                  data:
+                    transition: "{{ transition_on_value }}"
+                    brightness_pct: "{{ brightness_value }}"
+                    kelvin: "{{temperature_value}}"
+            - alias: "Set the brightness for the lights"
+              conditions:
+                - condition: template
+                  value_template: "{{ ('use_transition' not in include_light_control) and ('use_brightness' in include_light_control) and ('use_colour_temperature' not in include_light_control) }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ light_entities_off }}"
+                  data:
+                    brightness_pct: "{{ brightness_value }}"
+            - alias: "Set the colour temperature for the lights"
+              conditions:
+                - condition: template
+                  value_template: "{{ ('use_transition' not in include_light_control) and ('use_brightness' not in include_light_control) and ('use_colour_temperature' in include_light_control) }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ light_entities_off }}"
+                  data:
+                    kelvin: "{{temperature_value}}"
+            - alias: "Set the brightness and colour temperature for the lights"
+              conditions:
+                - condition: template
+                  value_template: "{{ ('use_transition' not in include_light_control) and ('use_brightness' in include_light_control) and ('use_colour_temperature' in include_light_control) }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ light_entities_off }}"
+                  data:
+                    brightness_pct: "{{ brightness_value }}"
+                    kelvin: "{{temperature_value}}"
+            - alias: "Set the default for the lights"
+              conditions:
+                - condition: template
+                  value_template: "{{ ('use_transition' not in include_light_control) and ('use_brightness' not in include_light_control) and ('use_colour_temperature' not in include_light_control) }}"
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ light_entities_off }}"
+          - choose:
+            - alias: "If transition is selected"
+              conditions:
+                - condition: template
+                  value_template: "{{ 'use_transition' in include_light_control }}"
+              sequence:
+                - alias: "Turn on the scenes"
+                  service: scene.turn_on
+                  target:
+                    entity_id: "{{ scene_entities }}"
+                  data:
+                    transition: "{{ transition_on_value }}"
+            - alias: "If transition is not selected"
+              conditions:
+                - condition: template
+                  value_template: "{{ 'use_transition' not in include_light_control }}"
+              sequence:
+                - alias: "Turn on the scenes"
+                  service: scene.turn_on
+                  target:
+                    entity_id: "{{ scene_entities }}"
+          - alias: "Turn on the switches"
+            service: switch.turn_on
+            target:
+              entity_id: "{{ switch_entities_off }}"
+          - choose:
+            - alias: "Check if other entities has entities"
+              conditions:
+                - condition: template
+                  value_template: "{{ other_entities | length > 0 }}"
+              sequence:
+                - alias: 'Turn on'
+                  service: homeassistant.turn_on
+                  target:
+                    entity_id: "{{other_entities}}"
+      - conditions:
+          - condition: trigger
+            id:
+              - 't2'
+              - 't4'
+              - 't6'
+              - 't8'
+        sequence:
+          - choose:
+            - alias: "If transition is selected"
+              conditions:
+                - condition: template
+                  value_template: "{{ 'use_transition' in include_light_control }}"
+              sequence:
+                - alias: "Turn off the lights"
+                  service: light.turn_off
+                  target:
+                    entity_id: "{{ light_entities }}"
+                  data:
+                    transition: "{{ transition_off_value }}"
+                - alias: "Turn off the scenes"
+                  service: scene.turn_on
+                  entity_id: !input end_scenes
+                  data:
+                    transition: "{{ transition_off_value }}"
+            - alias: "If transition is not selected"
+              conditions:
+                - condition: template
+                  value_template: "{{ 'use_transition' not in include_light_control }}"
+              sequence:
+                - alias: "Turn off the lights"
+                  service: light.turn_off
+                  target:
+                    entity_id: "{{ light_entities }}"
+                - alias: "Turn off the scenes"
+                  service: scene.turn_on
+                  entity_id: !input end_scenes
+          - alias: "Turn off the switches"
+            service: switch.turn_off
+            target:
+              entity_id: "{{ switch_entities }}"
+          - choose:
+            - alias: "Check if other entities has entities"
+              conditions:
+                - condition: template
+                  value_template: "{{ other_entities | length > 0 }}"
+              sequence:
+                - alias: 'Turn off'
+                  service: homeassistant.turn_off
+                  target:
+                    entity_id: "{{other_entities}}"
