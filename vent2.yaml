@@ -11,13 +11,14 @@ blueprint:
         entity:
           domain: fan
 
-    window_sensors:
-      name: Прозоречни сензори
-      description: Списък с бинарни сензори, които ще се използват за проверка на прозорците.
-      entity:
-        domain: binary_sensor
-        device_class: window
-      default: []
+    windows:
+      name: Прозорци
+      description: Списък с прозорци, които трябва да бъдат затворени.
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: window
+      multiple: true
 
     start_times:
       name: Начални часове
@@ -45,13 +46,13 @@ trigger:
 condition:
   - condition: template
     value_template: >
-      {% set window_states = [] %}
-      {% for sensor in window_sensors %}
-        {% if is_state(sensor, 'open') %}
-          {% set window_states = window_states + [sensor] %}
+      {% set open_windows = [] %}
+      {% for window in windows %}
+        {% if is_state(window, 'on') %}
+          {% set open_windows = open_windows + [window] %}
         {% endif %}
       {% endfor %}
-      {{ window_states | length == 0 }}
+      {{ open_windows | length == 0 }}
 
 action:
   - service: fan.turn_on
